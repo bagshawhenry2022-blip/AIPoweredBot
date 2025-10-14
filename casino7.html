@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Game Analytics Dashboard</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: radial-gradient(circle at top, #0a0000 0%, #000 100%);
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  header {
+    text-align: center;
+    padding: 15px 0;
+    background: #1a0000;
+    box-shadow: 0 2px 10px #000;
+  }
+
+  header h1 {
+    color: #ff3c3c;
+    margin: 0;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  .status {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+
+  .chart-container {
+    width: 90%;
+    max-width: 900px;
+    height: 250px;
+    margin: 30px auto;
+  }
+
+  .grid {
+    width: 95%;
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px;
+  }
+
+  .card {
+    background: linear-gradient(145deg, #111 0%, #0c0000 100%);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.15);
+    transition: all 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.35);
+  }
+
+  .name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #eee;
+    margin-bottom: 8px;
+  }
+
+  .score {
+    font-size: 1.4rem;
+    font-weight: bold;
+  }
+
+  .green {
+    color: #00ff85;
+    text-shadow: 0 0 8px #00ff85;
+  }
+
+  .red {
+    color: #ff4040;
+    text-shadow: 0 0 8px #ff4040;
+  }
+
+  footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+    padding: 10px 0 20px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Game Analytics Dashboard</h1>
+    <div class="status" id="statusText">AI Status: ONLINE | Updating in 60 min</div>
+  </header>
+
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <section class="grid" id="grid"></section>
+
+  <footer>Demo Dashboard • Animated Analytics View</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const allGames = [
+      "Fortune Tiger","Fortune Rabbit","Fortune Ox","Fortune Gem","Fortune Snake",
+      "Wild Bounty Showdown","Ganesha Gold","Piñata Wins","Golden Empire","Treasure Wild",
+      "Mystic Fortune Deluxe","Dragon Hero","Starlight Princess","Lucky Neko","Sugar Rush",
+      "Jewel Bonanza","Phoenix Forge","Power of Thor","Fruit Party 2","Big Bass Bonanza",
+      "The Dog House","Gates of Olympus","Wild West Gold","Sweet Bonanza","Aztec Blaze",
+      "Book of Golden Sands","Firebird Spirit","The Great Stick-Up","Sword of Ares","Madame Destiny Megaways",
+      "Floating Dragon","Chilli Heat","Hot Fiesta","Wild Wild Bananas","Mochimon",
+      "Wild Hop & Drop","Big Bass Splash","5 Lions Megaways","Tropical Tiki","Zombie Carnival",
+      "Club Tropicana","Big Bass Amazon Xtreme","Monster Superlanche","Crown of Fire","Crystal Caverns",
+      "Floating Treasure","Emerald King","Pirate’s Charm","Mystic Oasis","Neon Panda"
+    ];
+
+    const grid = document.getElementById("grid");
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generateData() {
+      const now = Date.now();
+      const hour = 3600000;
+      const last = localStorage.lastUpdate;
+      if (last && now - parseInt(last) < hour) {
+        const cached = JSON.parse(localStorage.cached);
+        if (cached) return cached;
+      }
+
+      const selected = shuffle(allGames).slice(0, 20).map((name, index) => ({
+        name,
+        score: index < 10 ? Math.floor(Math.random() * 11) + 90 : Math.floor(Math.random() * 80) + 10
+      }));
+
+      localStorage.cached = JSON.stringify(selected);
+      localStorage.lastUpdate = now;
+      return selected;
+    }
+
+    function renderCards(data) {
+      grid.innerHTML = "";
+      data.forEach((game) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="name">${game.name}</div>
+          <div class="score ${game.score >= 80 ? "green" : "red"}">${game.score}%</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Initialize Chart
+    const ctx = document.getElementById("chart").getContext("2d");
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: Array.from({ length: 40 }, (_, i) => i),
+        datasets: [{
+          borderColor: "#ff3c3c",
+          pointRadius: 0,
+          borderWidth: 2,
+          backgroundColor: "rgba(255,60,60,0.2)",
+          data: Array.from({ length: 40 }, () => Math.random() * 100),
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        animation: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: { min: 0, max: 100, grid: { color: "#222" }, ticks: { color: "#888" } }
+        }
+      }
+    });
+
+    // Animate chart line
+    setInterval(() => {
+      chart.data.datasets[0].data.shift();
+      chart.data.datasets[0].data.push(Math.random() * 100);
+      chart.update();
+    }, 1000);
+
+    // Render initial data
+    const games = generateData();
+    renderCards(games);
+
+    // Update countdown every minute
+    let minLeft = 60;
+    setInterval(() => {
+      minLeft--;
+      if (minLeft <= 0) minLeft = 60;
+      document.getElementById("statusText").textContent =
+        `AI Status: ONLINE | Updating in ${minLeft} min`;
+    }, 60000);
+  </script>
+</body>
+</html>
